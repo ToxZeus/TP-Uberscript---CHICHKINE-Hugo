@@ -1,17 +1,64 @@
 import { fetchMeals } from './meals.js';
 import { User, TropPauvreErreur } from './user.js';
 
+const mainTitle = document.querySelector('h1');
+
+const userSection = document.createElement('div');
+userSection.className = 'row mb-5';
+userSection.innerHTML = `
+    <div class="col-12">
+        <div class="card shadow border-info">
+            <div class="card-body">
+                <h4 class="card-title">Espace de <span id="userName"></span></h4>
+                <h5 class="text-primary mb-3">Portefeuille : <span id="walletDisplay"></span> €</h5>
+                <h6>Historique des commandes :</h6>
+                <ul id="historyList" class="list-group"></ul>
+            </div>
+        </div>
+    </div>
+`;
+mainTitle?.insertAdjacentElement('afterend', userSection);
+
+const walletDisplay = document.getElementById('walletDisplay') as HTMLSpanElement;
+const userName = document.getElementById('userName') as HTMLSpanElement;
+const historyList = document.getElementById('historyList') as HTMLUListElement;
+
+function updateUserUI(user: User) {
+    userName.textContent = user.name;
+    walletDisplay.textContent = user.wallet.toFixed(2);
+
+    historyList.innerHTML = '';
+
+    if (user.orders.length === 0) {
+        historyList.innerHTML = '<li class="list-group-item text-muted">Aucune commande pour le moment.</li>';
+    } else {
+        [...user.orders].reverse().forEach(order => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item d-flex justify-content-between align-items-center';
+
+            const mealNames = order.meals.map(m => m.name).join(', ');
+            li.innerHTML = `
+                <span>Commande #${order.id} : <strong>${mealNames}</strong></span>
+                <span class="badge bg-secondary rounded-pill">${order.total} €</span>
+            `;
+            historyList.appendChild(li);
+        });
+    }
+}
+
 async function init() {
     const myUser = new User(1, "Bob", 30);
 
-    const meals = await fetchMeals();
+    updateUserUI(myUser);
 
+    const meals = await fetchMeals();
+    
     const mealListElement = document.getElementById('mealList') as HTMLUListElement;
 
     if (!mealListElement) return;
 
     if (meals.length === 0) {
-        mealListElement.innerHTML = '<li class="list-group-item text-danger">Aucun repas disponible. Réessayez plus tard.</li>';
+        mealListElement.innerHTML = '<li class="list-group-item text-danger">Erreur lors du chargement des repas.</li>';
         return;
     }
 
@@ -31,8 +78,7 @@ async function init() {
         orderBtn.addEventListener('click', () => {
             try {
                 myUser.orderMeal(meal);
-                alert(`Commande de ${meal.name} réussie ! Nouveau solde: ${myUser.wallet}€`);
-                console.log("Historique des commandes :", myUser.orders);
+                updateUserUI(myUser);
             } catch (error) {
                 if (error instanceof TropPauvreErreur) {
                     alert(`Erreur : ${error.message}`);
