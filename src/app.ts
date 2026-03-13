@@ -50,8 +50,20 @@ function updateUserUI(user: User) {
             const mealNames = order.meals.map(m => m.name).join(', ');
             li.innerHTML = `
                 <span>Commande #${order.id} : <strong>${mealNames}</strong></span>
-                <span class="badge bg-secondary rounded-pill">${order.total} €</span>
+                <div>
+                    <span class="badge bg-secondary rounded-pill me-2">${order.total} €</span>
+                    <button class="btn btn-sm btn-outline-danger btn-delete">X</button>
+                </div>
             `;
+
+            const deleteBtn = li.querySelector('.btn-delete') as HTMLButtonElement;
+            deleteBtn.addEventListener('click', () => {
+                if (confirm(`Voulez-vous vraiment annuler la commande #${order.id} ?`)) {
+                    user.removeOrder(order.id);
+                    updateUserUI(user);
+                }
+            });
+
             historyList.appendChild(li);
         });
     }

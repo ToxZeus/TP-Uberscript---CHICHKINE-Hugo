@@ -65,4 +65,15 @@ export class User {
     getTotalSpent(): number {
         return this.orders.reduce((accumulateur, order) => accumulateur + order.total, 0);
     }
+
+    removeOrder(orderId: number) {
+        const orderIndex = this.orders.findIndex(order => order.id === orderId);
+
+        if (orderIndex !== -1) {
+            const orderToRemove = this.orders[orderIndex];
+            this.wallet += orderToRemove.total;
+            this.orders.splice(orderIndex, 1);
+            this.saveData();
+        }
+    }
 }
