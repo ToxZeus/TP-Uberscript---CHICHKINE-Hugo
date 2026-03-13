@@ -1,16 +1,51 @@
 import { fetchMeals } from './meals.js';
-import { User } from './user.js';
+import { User, TropPauvreErreur } from './user.js';
 
 async function init() {
-    console.log("Démarrage de l'application...");
-
-    // Création d'un utilisateur de test
     const myUser = new User(1, "Bob", 30);
-    console.log("Utilisateur initialisé :", myUser);
 
-    // Test de la récupération de l'API
     const meals = await fetchMeals();
-    console.log("Repas récupérés :", meals);
+
+    const mealListElement = document.getElementById('mealList') as HTMLUListElement;
+
+    if (!mealListElement) return;
+
+    if (meals.length === 0) {
+        mealListElement.innerHTML = '<li class="list-group-item text-danger">Aucun repas disponible. Réessayez plus tard.</li>';
+        return;
+    }
+
+    mealListElement.innerHTML = '';
+
+    meals.forEach(meal => {
+        const li = document.createElement('li');
+        li.className = 'list-group-item d-flex justify-content-between align-items-center';
+
+        const mealText = document.createElement('span');
+        mealText.innerHTML = `<strong>${meal.name}</strong> - ${meal.price}€`;
+
+        const orderBtn = document.createElement('button');
+        orderBtn.className = 'btn btn-sm btn-primary';
+        orderBtn.textContent = 'Commander';
+
+        orderBtn.addEventListener('click', () => {
+            try {
+                myUser.orderMeal(meal);
+                alert(`Commande de ${meal.name} réussie ! Nouveau solde: ${myUser.wallet}€`);
+                console.log("Historique des commandes :", myUser.orders);
+            } catch (error) {
+                if (error instanceof TropPauvreErreur) {
+                    alert(`Erreur : ${error.message}`);
+                } else {
+                    console.error(error);
+                }
+            }
+        });
+
+        li.appendChild(mealText);
+        li.appendChild(orderBtn);
+        mealListElement.appendChild(li);
+    });
 }
 
 init();

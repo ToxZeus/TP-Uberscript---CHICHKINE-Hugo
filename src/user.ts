@@ -6,6 +6,13 @@ export type Order = {
     total: number;
 };
 
+export class TropPauvreErreur extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "TropPauvreErreur";
+    }
+}
+
 export class User {
     id: number;
     name: string;
@@ -17,5 +24,21 @@ export class User {
         this.name = name;
         this.wallet = wallet;
         this.orders = [];
+    }
+
+    orderMeal(meal: Meal) {
+        if (this.wallet < meal.price) {
+            throw new TropPauvreErreur(`Fonds insuffisants. Solde: ${this.wallet}€ | Prix du repas: ${meal.price}€`);
+        }
+
+        this.wallet -= meal.price;
+
+        const newOrder: Order = {
+            id: Date.now(),
+            meals: [meal],
+            total: meal.price
+        };
+
+        this.orders.push(newOrder);
     }
 }
