@@ -1,4 +1,4 @@
-import { fetchMeals } from './meals.js';
+import { fetchMeals, Meal } from './meals.js';
 import { User, TropPauvreErreur } from './user.js';
 
 const mainTitle = document.querySelector('h1');
@@ -20,10 +20,6 @@ userSection.innerHTML = `
     </div>
 `;
 mainTitle?.insertAdjacentElement('afterend', userSection);
-
-const walletDisplay = document.getElementById('walletDisplay') as HTMLSpanElement;
-const userName = document.getElementById('userName') as HTMLSpanElement;
-const historyList = document.getElementById('historyList') as HTMLUListElement;
 
 function updateUserUI(user: User) {
     const userName = document.getElementById('userName') as HTMLSpanElement;
@@ -69,30 +65,25 @@ function updateUserUI(user: User) {
     }
 }
 
-async function init() {
-    const myUser = new User(1, "Bob", 30);
+let allMeals: Meal[] = [];
 
-    updateUserUI(myUser);
-
-    const meals = await fetchMeals();
-
+function renderMeals(mealsToDisplay: Meal[], user: User) {
     const mealListElement = document.getElementById('mealList') as HTMLUListElement;
-
     if (!mealListElement) return;
-
-    if (meals.length === 0) {
-        mealListElement.innerHTML = '<li class="list-group-item text-danger">Erreur lors du chargement des repas.</li>';
-        return;
-    }
 
     mealListElement.innerHTML = '';
 
-    meals.forEach(meal => {
+    if (mealsToDisplay.length === 0) {
+        mealListElement.innerHTML = '<li class="list-group-item text-warning">Aucun repas trouvé pour ce critère.</li>';
+        return;
+    }
+
+    mealsToDisplay.forEach(meal => {
         const li = document.createElement('li');
-        li.className = 'list-group-item d-flex justify-content-between align-items-center';
+        li.className = 'list-group-item d-flex justify-content-between align-items-center mb-2 shadow-sm';
 
         const mealText = document.createElement('span');
-        mealText.innerHTML = `<strong>${meal.name}</strong> - ${meal.price}€`;
+        mealText.innerHTML = `<strong>${meal.name}</strong> - ${meal.price}€ <br><small class="text-muted">${meal.calories} kcal</small>`;
 
         const orderBtn = document.createElement('button');
         orderBtn.className = 'btn btn-sm btn-primary';
@@ -100,8 +91,8 @@ async function init() {
 
         orderBtn.addEventListener('click', () => {
             try {
-                myUser.orderMeal(meal);
-                updateUserUI(myUser);
+                user.orderMeal(meal);
+                updateUserUI(user);
             } catch (error) {
                 if (error instanceof TropPauvreErreur) {
                     alert(`Erreur : ${error.message}`);
@@ -115,6 +106,50 @@ async function init() {
         li.appendChild(orderBtn);
         mealListElement.appendChild(li);
     });
+}
+
+async function init() {
+    const myUser = new User(1, "Bob", 30);
+    updateUserUI(myUser);
+
+    const mealListElement = document.getElementById('mealList') as HTMLUListElement;
+    if (!mealListElement) return;
+
+    const filterContainer = document.createElement('div');
+    filterContainer.className = 'input-group mb-3';
+    filterContainer.innerHTML = `
+        <span class="input-group-text">Prix Max (€)</span>
+        <input type="number" id="priceFilter" class="form-control" placeholder="Ex: 10">
+        <button class="btn btn-outline-secondary" id="filterBtn">Filtrer</button>
+        <button class="btn btn-outline-danger" id="resetBtn">Reset</button>
+    `;
+    mealListElement.parentNode?.insertBefore(filterContainer, mealListElement);
+
+    const priceFilterInput = document.getElementById('priceFilter') as HTMLInputElement;
+    const filterBtn = document.getElementById('filterBtn') as HTMLButtonElement;
+    const resetBtn = document.getElementById('resetBtn') as HTMLButtonElement;
+
+    filterBtn.addEventListener('click', () => {
+        const maxPrice = parseFloat(priceFilterInput.value);
+        if (!isNaN(maxPrice)) {
+            const filteredMeals = allMeals.filter(meal => meal.price <= maxPrice);
+            renderMeals(filteredMeals, myUser);
+        }
+    });
+
+    resetBtn.addEventListener('click', () => {
+        priceFilterInput.value = '';
+        renderMeals(allMeals, myUser);
+    });
+
+    allMeals = await fetchMeals();
+
+    if (allMeals.length === 0) {
+        mealListElement.innerHTML = '<li class="list-group-item text-danger">Erreur lors du chargement des repas.</li>';
+        return;
+    }
+
+    renderMeals(allMeals, myUser);
 }
 
 init();
