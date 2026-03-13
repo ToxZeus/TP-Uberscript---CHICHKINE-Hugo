@@ -61,4 +61,8 @@ export class User {
         localStorage.setItem(`wallet_${this.id}`, this.wallet.toString());
         localStorage.setItem(`orders_${this.id}`, JSON.stringify(this.orders));
     }
+
+    getTotalSpent(): number {
+        return this.orders.reduce((accumulateur, order) => accumulateur + order.total, 0);
+    }
 }

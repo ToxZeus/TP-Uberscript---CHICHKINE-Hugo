@@ -11,6 +11,8 @@ userSection.innerHTML = `
             <div class="card-body">
                 <h4 class="card-title">Espace de <span id="userName"></span></h4>
                 <h5 class="text-primary mb-3">Portefeuille : <span id="walletDisplay"></span> €</h5>
+                <p class="text-muted mb-3">Total dépensé : <span id="totalSpentDisplay">0.00</span> €</p>
+                
                 <h6>Historique des commandes :</h6>
                 <ul id="historyList" class="list-group"></ul>
             </div>
@@ -24,8 +26,17 @@ const userName = document.getElementById('userName') as HTMLSpanElement;
 const historyList = document.getElementById('historyList') as HTMLUListElement;
 
 function updateUserUI(user: User) {
+    const userName = document.getElementById('userName') as HTMLSpanElement;
+    const walletDisplay = document.getElementById('walletDisplay') as HTMLSpanElement;
+    const historyList = document.getElementById('historyList') as HTMLUListElement;
+    const totalSpentDisplay = document.getElementById('totalSpentDisplay') as HTMLSpanElement;
+
     userName.textContent = user.name;
     walletDisplay.textContent = user.wallet.toFixed(2);
+
+    if (totalSpentDisplay) {
+        totalSpentDisplay.textContent = user.getTotalSpent().toFixed(2);
+    }
 
     historyList.innerHTML = '';
 
@@ -52,7 +63,7 @@ async function init() {
     updateUserUI(myUser);
 
     const meals = await fetchMeals();
-    
+
     const mealListElement = document.getElementById('mealList') as HTMLUListElement;
 
     if (!mealListElement) return;
